@@ -1,0 +1,50 @@
+{
+  "entities": {
+    "ledger": {
+      "title": "Daily Ledger",
+      "description": "Records of daily sales including product, customer, price, and quantity.",
+      "type": "object",
+      "properties": {
+        "date": { "type": "string", "format": "date-time", "description": "Date of transaction" },
+        "product": { "type": "string", "description": "Name of the baked item" },
+        "customer": { "type": "string", "description": "Customer name" },
+        "price": { "type": "number", "description": "Price per unit" },
+        "quantity": { "type": "number", "description": "Quantity sold" },
+        "total": { "type": "number", "description": "Total amount (price * quantity)" },
+        "uid": { "type": "string", "description": "User ID of the owner" }
+      },
+      "required": ["date", "product", "price", "quantity", "total", "uid"]
+    },
+    "inventory": {
+      "title": "Inventory",
+      "description": "Previously baked items with pictures and reference prices.",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string", "description": "Name of the item" },
+        "description": { "type": "string", "description": "Description (e.g., eggless, veg)" },
+        "price": { "type": "number", "description": "Last sold price" },
+        "imageUrl": { "type": "string", "description": "URL to the item's picture" },
+        "category": { "type": "string", "description": "Category (Pizza, Bread, Cake, etc.)" },
+        "uid": { "type": "string", "description": "User ID of the owner" }
+      },
+      "required": ["name", "price", "uid"]
+    },
+    "marketing_logs": {
+      "title": "Marketing Logs",
+      "description": "History of generated marketing content.",
+      "type": "object",
+      "properties": {
+        "type": { "type": "string", "enum": ["whatsapp", "instagram", "strategy"], "description": "Type of content" },
+        "content": { "type": "string", "description": "The generated text" },
+        "timestamp": { "type": "string", "format": "date-time" },
+        "uid": { "type": "string" }
+      },
+      "required": ["type", "content", "timestamp", "uid"]
+    }
+  },
+  "firestore": {
+    "/ledger/{id}": { "schema": "ledger", "description": "Daily sales records" },
+    "/inventory/{id}": { "schema": "inventory", "description": "Baked items catalog" },
+    "/marketing_logs/{id}": { "schema": "marketing_logs", "description": "Marketing history" }
+  }
+}

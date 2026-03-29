@@ -1,0 +1,127 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // ===============================================================
+    // Assumed Data Model
+    // ===============================================================
+    //
+    // Collection: ledger
+    // Fields:
+    //   - date: timestamp (required)
+    //   - product: string (required, 1-100 chars)
+    //   - customer: string (required, 1-100 chars)
+    //   - price: number (required, positive)
+    //   - quantity: number (required, positive)
+    //   - total: number (required, positive)
+    //   - uid: string (required, matches owner)
+    //
+    // Collection: inventory
+    // Fields:
+    //   - name: string (required, 1-100 chars)
+    //   - description: string (optional, < 500 chars)
+    //   - price: number (required, positive)
+    //   - imageUrl: string (optional, URL)
+    //   - category: string (optional, < 50 chars)
+    //   - uid: string (required, matches owner)
+    //
+    // Collection: marketing_logs
+    // Fields:
+    //   - type: string (required, enum: whatsapp, instagram, strategy)
+    //   - content: string (required, < 5000 chars)
+    //   - timestamp: timestamp (required)
+    //   - uid: string (required, matches owner)
+    //
+    // ===============================================================
+
+    // ===============================================================
+    // Helper Functions
+    // ===============================================================
+    
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    function isDocOwner() {
+      return isAuthenticated() && request.auth.uid == resource.data.uid;
+    }
+
+    function isAdmin() {
+      return isAuthenticated() && 
+        (request.auth.token.email == "stutimodi96@gmail.com" && request.auth.token.email_verified == true);
+    }
+
+    function hasRequiredFields(fields) {
+      return request.resource.data.keys().hasAll(fields);
+    }
+
+    function isValidString(field, min, max) {
+      return request.resource.data[field] is string && 
+             request.resource.data[field].size() >= min && 
+             request.resource.data[field].size() <= max;
+    }
+
+    function isValidNumber(field) {
+      return request.resource.data[field] is number && request.resource.data[field] >= 0;
+    }
+
+    // ===============================================================
+    // Domain Validators
+    // ===============================================================
+
+    function isValidLedger(data) {
+      return hasRequiredFields(['date', 'product', 'price', 'quantity', 'total', 'uid']) &&
+             data.product is string && data.product.size() > 0 && data.product.size() <= 100 &&
+             data.price is number && data.price >= 0 &&
+             data.quantity is number && data.quantity > 0 &&
+             data.uid == request.auth.uid;
+    }
+
+    function isValidInventory(data) {
+      return hasRequiredFields(['name', 'price', 'uid']) &&
+             data.name is string && data.name.size() > 0 && data.name.size() <= 100 &&
+             data.price is number && data.price >= 0 &&
+             data.uid == request.auth.uid;
+    }
+
+    function isValidMarketingLog(data) {
+      return hasRequiredFields(['type', 'content', 'timestamp', 'uid']) &&
+             data.type in ['whatsapp', 'instagram', 'strategy'] &&
+             data.content is string && data.content.size() > 0 &&
+             data.uid == request.auth.uid;
+    }
+
+    // ===============================================================
+    // Rules
+    // ===============================================================
+
+    match /ledger/{id} {
+      allow read: if isDocOwner() || isAdmin();
+      allow create: if isAuthenticated() && isValidLedger(request.resource.data);
+      allow update: if isDocOwner() && isValidLedger(request.resource.data);
+      allow delete: if isDocOwner() || isAdmin();
+    }
+
+    match /inventory/{id} {
+      allow read: if isDocOwner() || isAdmin();
+      allow create: if isAuthenticated() && isValidInventory(request.resource.data);
+      allow update: if isDocOwner() && isValidInventory(request.resource.data);
+      allow delete: if isDocOwner() || isAdmin();
+    }
+
+    match /marketing_logs/{id} {
+      allow read: if isDocOwner() || isAdmin();
+      allow create: if isAuthenticated() && isValidMarketingLog(request.resource.data);
+      allow update: if isDocOwner() && isValidMarketingLog(request.resource.data);
+      allow delete: if isDocOwner() || isAdmin();
+    }
+
+    match /{path=**} {
+      allow read, write: if false;
+    }
+  }
+}

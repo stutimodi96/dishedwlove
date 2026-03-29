@@ -1,0 +1,5 @@
+{
+  "name": "Dished with Love Assistant",
+  "description": "A comprehensive assistant for Rashmi Modi's home bakery, providing marketing, accounting, and inventory management tools.",
+  "requestFramePermissions": ["microphone"]
+}
